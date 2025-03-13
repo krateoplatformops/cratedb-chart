@@ -38,7 +38,8 @@ spec:
         # We are using the SRV records provided by Kubernetes to discover
         # nodes within the cluster.
         command:
-          - /crate/bin/crate
+          - crate
+        args: 
           - -Cnode.name=${POD_NAME}
           - -Ccluster.name=finops
           - -Ccluster.initial_master_nodes={{ include "cratedb.fullname" . }}-0
@@ -81,6 +82,8 @@ spec:
           # This is variable is detected by CrateDB.
           - name: CRATE_HEAP_SIZE
             value: "{{ .Values.crate.heapsize }}"
+          - name: CRATE_DISABLE_GC_LOGGING
+            value: "1"
           - name: POD_NAME
             valueFrom:
               fieldRef:

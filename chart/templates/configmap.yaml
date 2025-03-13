@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  labels:
+    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+data:
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: create-user-sidecar
+  labels:
+    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+data:
+  create-user.sh: |-
+    echo "Installing required packages..." >> /tmp/user-creation.log
+    dnf install --nodocs --assumeyes curl jq python3\
+      && dnf clean all \
+      && rm -rf /var/cache/yum
+
+    echo "Generating random password..." >> /tmp/user-creation.log
+    PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9!@#$%^&*()_+?><~' | head -c20)
+
+    echo "Creating Kubernetes secret with credentials..."
+    # Path to service account token
+    TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    # Get the API server CA certificate
+    CACERT="/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+
+    # Check if secret already exists
+    SECRET_EXISTS=$(curl -s -X GET \
+      -H "Authorization: Bearer ${TOKEN}" \
+      --cacert ${CACERT} \
+      "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}" | grep -c "\"kind\": \"Secret\"" || true)
+    if [ "${SECRET_EXISTS}" -gt 0 ]; then
+      echo "Secret ${SECRET_NAME} already exists, stopping..." >> /tmp/user-creation.log
+      exit 0
+    fi
+    echo "Creating user ${NEW_USER}..." >> /tmp/user-creation.log
+    MAX_RETRIES=10
+    RETRY_DELAY=10
+    RETRY_COUNT=0
+    input=$(cat <<-EOFCMD
+    CREATE USER ${NEW_USER} with (password = '${PASSWORD}'); GRANT ALL PRIVILEGES TO ${NEW_USER};
+    EOFCMD
+      )
+
+    while true; do
+      echo "$input" | crash --hosts http://localhost:4200 > output.txt 2>&1
+      output=$(cat output.txt)
+      if [[ $(expr match "$output" 'CONNECT OK') != 0 ]]; then
+        echo "$output" >> /tmp/user-creation.log
+        echo "Command succeeded" >> /tmp/user-creation.log
+        echo "Creating new secret ${SECRET_NAME}..." >> /tmp/user-creation.log
+        SECRET_DATA="{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"name\":\"${SECRET_NAME}\",\"namespace\":\"${NAMESPACE}\"},\"type\":\"Opaque\",\"stringData\":{\"username\":\"${NEW_USER}\",\"password\":\"${PASSWORD}\"}}"
+        curl -s -X POST \
+          -H "Authorization: Bearer ${TOKEN}" \
+          -H "Content-Type: application/json" \
+          --cacert ${CACERT} \
+          "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets" \
+          -d "${SECRET_DATA}" > /dev/null
+        echo "Done, finishing..." >> /tmp/user-creation.log
+        exit 0
+      else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo "Connection error. Attempt $RETRY_COUNT/$MAX_RETRIES." >> /tmp/user-creation.log
+        if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+          echo "Failed after $MAX_RETRIES attempts. Exiting with error." >> /tmp/user-creation.log
+          exit 1
+        fi
+        echo "Sleeping for $RETRY_DELAY seconds before next attempt..." >> /tmp/user-creation.log
+        sleep $RETRY_DELAY
+      fi
+    done

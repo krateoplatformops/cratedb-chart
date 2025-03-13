@@ -1,0 +1,21 @@
+{{- if .Values.openshift.enabled }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true 
+allowedCapabilities:
+- SYS_CHROOT
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: RunAsAny
+users: []
+groups: []
+{{- end }}

@@ -1,0 +1,131 @@
+kind: StatefulSet
+apiVersion: "apps/v1"
+metadata:
+  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+spec:
+  serviceName: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "finops-cratedb-cluster-chart.labels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "finops-cratedb-cluster-chart.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "finops-cratedb-cluster-chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      # This final section is the core of the StatefulSet configuration.
+      # It defines the container to run in each pod.
+      containers:
+      - name: crate
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent  10 }}
+        # Pass in configuration to CrateDB via command-line options.
+        # We are setting the name of the node's explicitly, which is
+        # needed to determine the initial master nodes. These are set to
+        # the name of the pod.
+        # We are using the SRV records provided by Kubernetes to discover
+        # nodes within the cluster.
+        command:
+          - /crate/bin/crate
+          - -Cnode.name=${POD_NAME}
+          - -Ccluster.name=finops
+          - -Ccluster.initial_master_nodes={{ include "finops-cratedb-cluster-chart.fullname" . }}-0
+          - -Cdiscovery.seed_providers=srv
+          - -Cdiscovery.srv.query=_crate-internal._tcp.{{ include "finops-cratedb-cluster-chart.fullname" . }}-internal.${NAMESPACE}.svc.cluster.local
+          - -Cgateway.recover_after_data_nodes={{ .Values.replicaCount }}
+          - -Cgateway.expected_data_nodes={{ .Values.replicaCount }}
+          - -Cpath.data=/data/data0
+          - -Cauth.host_based.enabled=true
+          - -Cauth.host_based.config.0.user=crate
+          - -Cauth.host_based.config.0.address=_local_
+          - -Cauth.host_based.config.0.method=trust
+          - -Cauth.host_based.config.99.method=password
+          - -Cprocessors=1
+          - -Cnode.master=true
+          - -Cnode.data=true
+          - -Cnode.attr.node_name=hot
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- with .Values.volumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        ports:
+          # Port 4300 for inter-node communication.
+        - containerPort: 4300
+          name: crate-internal
+          # Port 4200 for HTTP clients.
+        - containerPort: 4200
+          name: crate-web
+          # Port 5432 for PostgreSQL wire protocol clients.
+        - containerPort: 5432
+          name: postgres
+        # Environment variables passed through to the container.
+        env:
+          # This is variable is detected by CrateDB.
+          - name: CRATE_HEAP_SIZE
+            value: "{{ .Values.crate.heapsize }}"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: CRATEDB_SERVICE
+            value: {{ include "finops-cratedb-cluster-chart.fullname" . }}.{{ .Release.Namespace }}
+          - name: CRATEDB_USERNAME
+            value: {{ .Values.crate.adminUser | default "crate" | quote }}
+          - name: CRATEDB_PASSWORD
+            value: {{ .Values.crate.adminPassword | default "" | quote }}
+          - name: NEW_USER
+            value: {{ .Values.crate.newUser | default "app_user" | quote }}
+          - name: SECRET_NAME
+            value: {{ include "finops-cratedb-cluster-chart.fullname" . }}-{{ .Values.crate.newUser }}-credentials
+        envFrom:
+          - configMapRef:
+              name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - "/bin/sh"
+              - "-c"
+              - "if [ -f /scripts/create-user.sh ]; then /scripts/create-user.sh || echo 'Script failed' > /tmp/script-error.log; else echo 'Script not found' > /tmp/script-error.log; fi"
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.volumeClaims }}
+  volumeClaimTemplates:
+    {{- toYaml .Values.volumeClaims | nindent 4 }}
+  {{- end }}

@@ -1,0 +1,24 @@
+{{- if .Values.openshift.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "finops-cratedb-cluster-chart.serviceAccountName" . }}
+      containers:
+      - name: oc-client
+        image: {{ .Values.openshift.preInstallJob.image }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          oc adm policy add-scc-to-user {{ include "finops-cratedb-cluster-chart.fullname" . }} -z {{ include "finops-cratedb-cluster-chart.serviceAccountName" . }} -n {{ .Release.Namespace }}
+      restartPolicy: Never
+  backoffLimit: 1
+{{- end }}

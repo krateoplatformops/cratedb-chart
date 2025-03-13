@@ -18,9 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Print Version
+      - name: Print CHART_VERSION
         run: |
           echo CHART_VERSION:${{steps.chart_version.outputs.tag}}
+
+      - name: Replace CHART_VERSION in Chart.yaml
+        run: sed -i 's/CHART_VERSION/${{ steps.chart_version.outputs.tag }}/g' ./chart/Chart.yaml
 
       - name: Authenticate with GitHub App
         id: authenticate

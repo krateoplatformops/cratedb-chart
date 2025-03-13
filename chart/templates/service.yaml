@@ -1,28 +1,13 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
-  labels:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
-spec:
-  # Create an externally reachable load balancer.
-  type: LoadBalancer
-  ports:
-    # Port 4200 for HTTP clients.
-  - port: 4200
-    name: crate-web
-    # Port 5432 for PostgreSQL wire protocol clients.
-  - port: 5432
-    name: postgres
-  selector:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
----
-kind: Service
-apiVersion: v1
-metadata:
   name: {{ include "finops-cratedb-cluster-chart.fullname" . }}-internal
   labels:
     {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   # A static IP address is assigned to this service. This IP address is
   # only reachable from within the Kubernetes cluster.
@@ -31,5 +16,34 @@ spec:
     # Port 4300 for inter-node communication.
   - port: 4300
     name: crate-internal
+  selector:
+    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  labels:
+    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  # Create an externally reachable load balancer.
+  type: {{ .Values.service.type }}
+  ports:
+    # Port 4200 for HTTP clients.
+  - port: {{ .Values.service.httpPort }}
+    name: crate-web
+    {{- if eq .Values.service.type "NodePort" }}
+    nodePort: {{ .Values.service.httpPort }}
+    {{- end }}
+    # Port 5432 for PostgreSQL wire protocol clients.
+  - port: {{ .Values.service.postgreSQLPort }}
+    name: postgres
+    {{- if eq .Values.service.type "NodePort" }}
+    nodePort: {{ .Values.service.postgreSQLPort }}
+    {{- end }}
   selector:
     {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}

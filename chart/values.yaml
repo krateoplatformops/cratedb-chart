@@ -18,27 +18,18 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-podAnnotations: {}
-podLabels: {}
-
-podSecurityContext: {}
-  # fsGroup: 2000
-
-openshift:
-  enabled: false
-# Pre-install job configuration
-  preInstallJob:
-    # Image to use for running OpenShift CLI commands
-    image: "quay.io/openshift/origin-cli:4.16"
-    # Additional parameters for the job
-    ttlSecondsAfterFinished: 300
-
 serviceAccount:
   create: true
   name: ""  # If not set, the chart name is used
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-5"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
 
 securityContext:
   capabilities:
@@ -50,6 +41,12 @@ securityContext:
   # runAsNonRoot: true
   privileged: true
   runAsUser: 1000
+
+service:
+  annotations: {}
+  type: ClusterIP
+  httpPort: 4200
+  postgreSQLPort: 5432
 
 ingress:
   enabled: false
@@ -110,10 +107,6 @@ volumeClaims:
     resources:
       requests:
         storage: 128Mi
-crate:
-  heapsize: "1g"
-  adminUser: crate
-  newUser: system
 
 metadata:
   annotations: {}  # This will override any default annotations
@@ -121,3 +114,17 @@ metadata:
 
 env: {}
 
+
+crate:
+  heapsize: "1g"
+  adminUser: crate
+  newUser: system
+
+openshift:
+  enabled: false
+# Pre-install job configuration
+  preInstallJob:
+    # Image to use for running OpenShift CLI commands
+    image: "quay.io/openshift/origin-cli:4.16"
+    # Additional parameters for the job
+    ttlSecondsAfterFinished: 300

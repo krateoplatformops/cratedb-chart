@@ -31,7 +31,7 @@ metadata:
     {{- end }}
 spec:
   # Create an externally reachable load balancer.
-  type: {{ .Values.service.type }}
+  type: ClusterIP
   ports:
     # Port 4200 for HTTP clients.
   - port: {{ .Values.service.httpPort }}

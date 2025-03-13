@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  name: {{ include "cratedb.fullname" . }}
   labels:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}
 data:
   {{- range $key, $value := .Values.env }}
   {{ $key }}: {{ $value | quote }}
@@ -14,7 +14,7 @@ kind: ConfigMap
 metadata:
   name: create-user-sidecar
   labels:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": pre-install, pre-upgrade
 data:

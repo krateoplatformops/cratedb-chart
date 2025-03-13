@@ -2,7 +2,7 @@
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  name: {{ include "cratedb.fullname" . }}
 allowPrivilegeEscalation: true
 allowPrivilegedContainer: true 
 allowedCapabilities:

@@ -1,9 +1,9 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}-internal
+  name: {{ include "cratedb.fullname" . }}-internal
   labels:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}
   annotations:
     {{- with .Values.service.annotations }}
     {{- toYaml . | nindent 4 }}
@@ -17,14 +17,14 @@ spec:
   - port: 4300
     name: crate-internal
   selector:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}
 ---
 kind: Service
 apiVersion: v1
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  name: {{ include "cratedb.fullname" . }}
   labels:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}
   annotations:
     {{- with .Values.service.annotations }}
     {{- toYaml . | nindent 4 }}
@@ -46,4 +46,4 @@ spec:
     nodePort: {{ .Values.service.postgreSQLPort }}
     {{- end }}
   selector:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}

@@ -1,13 +1,13 @@
 kind: StatefulSet
 apiVersion: "apps/v1"
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  name: {{ include "cratedb.fullname" . }}
 spec:
-  serviceName: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  serviceName: {{ include "cratedb.fullname" . }}
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "finops-cratedb-cluster-chart.labels" . | nindent 6 }}
+      {{- include "cratedb.labels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -15,12 +15,12 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "finops-cratedb-cluster-chart.labels" . | nindent 8 }}
+        {{- include "cratedb.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      serviceAccountName: {{ include "finops-cratedb-cluster-chart.serviceAccountName" . }}
+      serviceAccountName: {{ include "cratedb.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       # This final section is the core of the StatefulSet configuration.
@@ -41,9 +41,9 @@ spec:
           - /crate/bin/crate
           - -Cnode.name=${POD_NAME}
           - -Ccluster.name=finops
-          - -Ccluster.initial_master_nodes={{ include "finops-cratedb-cluster-chart.fullname" . }}-0
+          - -Ccluster.initial_master_nodes={{ include "cratedb.fullname" . }}-0
           - -Cdiscovery.seed_providers=srv
-          - -Cdiscovery.srv.query=_crate-internal._tcp.{{ include "finops-cratedb-cluster-chart.fullname" . }}-internal.${NAMESPACE}.svc.cluster.local
+          - -Cdiscovery.srv.query=_crate-internal._tcp.{{ include "cratedb.fullname" . }}-internal.${NAMESPACE}.svc.cluster.local
           - -Cgateway.recover_after_data_nodes={{ .Values.replicaCount }}
           - -Cgateway.expected_data_nodes={{ .Values.replicaCount }}
           - -Cpath.data=/data/data0
@@ -90,7 +90,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: CRATEDB_SERVICE
-            value: {{ include "finops-cratedb-cluster-chart.fullname" . }}.{{ .Release.Namespace }}
+            value: {{ include "cratedb.fullname" . }}.{{ .Release.Namespace }}
           - name: CRATEDB_USERNAME
             value: {{ .Values.crate.adminUser | default "crate" | quote }}
           - name: CRATEDB_PASSWORD
@@ -98,10 +98,10 @@ spec:
           - name: NEW_USER
             value: {{ .Values.crate.newUser | default "app_user" | quote }}
           - name: SECRET_NAME
-            value: {{ include "finops-cratedb-cluster-chart.fullname" . }}-{{ .Values.crate.newUser }}-credentials
+            value: {{ include "cratedb.fullname" . }}-{{ .Values.crate.newUser }}-credentials
         envFrom:
           - configMapRef:
-              name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+              name: {{ include "cratedb.fullname" . }}
         lifecycle:
           postStart:
             exec:

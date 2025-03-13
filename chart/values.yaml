@@ -39,7 +39,6 @@ securityContext:
 
 service:
   annotations: {}
-  type: ClusterIP
   httpPort: 4200
   postgreSQLPort: 5432
 

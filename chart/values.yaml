@@ -29,17 +29,12 @@ podAnnotations: {}
 podLabels: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
+  # fsGroup: 
 
 securityContext:
   capabilities:
     add:
     - SYS_CHROOT
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  privileged: true
   runAsUser: 1000
 
 service:

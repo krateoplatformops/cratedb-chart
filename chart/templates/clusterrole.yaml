@@ -2,7 +2,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  name: {{ include "cratedb.fullname" . }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-5"
@@ -10,7 +10,7 @@ rules:
 - apiGroups:
   - security.openshift.io
   resourceNames:
-  - {{ include "finops-cratedb-cluster-chart.fullname" . }}
+  - {{ include "cratedb.fullname" . }}
   resources:
   - securitycontextconstraints
   verbs:
@@ -19,7 +19,7 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}-scc
+  name: {{ include "cratedb.fullname" . }}-scc
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-5"

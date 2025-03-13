@@ -1,9 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "finops-cratedb-cluster-chart.fullname" . }}-secret-creator
+  name: {{ include "cratedb.fullname" . }}-secret-creator
   labels:
-    {{- include "finops-cratedb-cluster-chart.labels" . | nindent 4 }}
+    {{- include "cratedb.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": pre-install
     "helm.sh/hook-weight": "-10"

@@ -110,6 +110,7 @@ env: {}
 
 
 crate:
+  clusterName: finops
   heapsize: "1g"
   adminUser: crate
   newUser: system

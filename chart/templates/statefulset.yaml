@@ -41,7 +41,7 @@ spec:
           - crate
         args: 
           - -Cnode.name=${POD_NAME}
-          - -Ccluster.name=finops
+          - -Ccluster.name={{ .Values.crate.clusterName }}
           - -Ccluster.initial_master_nodes={{ include "cratedb.fullname" . }}-0
           - -Cdiscovery.seed_providers=srv
           - -Cdiscovery.srv.query=_crate-internal._tcp.{{ include "cratedb.fullname" . }}-internal.${NAMESPACE}.svc.cluster.local

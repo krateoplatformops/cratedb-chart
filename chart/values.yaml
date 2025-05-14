@@ -97,7 +97,9 @@ volumeClaims:
   spec:
     accessModes:
     - ReadWriteOnce
-    storageClassName: azurefile-csi
+    # If modified, the following value must be set to a valid storage class name in your cluster
+    # If kept as is, the default storage class of the cluster will be used
+    storageClassName: storageClassPlaceholder
     resources:
       requests:
         storage: 128Mi
@@ -108,7 +110,6 @@ metadata:
 
 env: {}
 
-
 crate:
   clusterName: finops
   heapsize: "1g"
@@ -117,7 +118,7 @@ crate:
 
 openshift:
   enabled: false
-# Pre-install job configuration
+  # Pre-install job configuration
   preInstallJob:
     # Image to use for running OpenShift CLI commands
     image: "quay.io/openshift/origin-cli:4.16"

@@ -57,6 +57,7 @@ spec:
           - -Cnode.master=true
           - -Cnode.data=true
           - -Cnode.attr.node_name=hot
+          - -Cnode.store.allow_mmap=false # Due to bootstrap checks
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 10 }}
         readinessProbe:

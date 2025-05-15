@@ -28,8 +28,8 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 
+podSecurityContext:
+  fsGroup: 1000
 
 securityContext:
   capabilities:
@@ -97,9 +97,9 @@ volumeClaims:
   spec:
     accessModes:
     - ReadWriteOnce
-    # If modified, the following value must be set to a valid storage class name in your cluster
-    # If kept as is, the default storage class of the cluster will be used
-    storageClassName: storageClassPlaceholder
+    # If the `storageClassName` field is modified, the value must be set to a valid storage class name in your cluster
+    # If kept commented as is, the default storage class of the cluster will be used
+    #storageClassName: 
     resources:
       requests:
         storage: 128Mi

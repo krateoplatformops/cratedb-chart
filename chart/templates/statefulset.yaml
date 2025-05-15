@@ -131,15 +131,5 @@ spec:
       {{- end }}
   {{- if .Values.volumeClaims }}
   volumeClaimTemplates:
-  {{- range .Values.volumeClaims }}
-    - metadata:
-        name: {{ .metadata.name }}
-      spec:
-        accessModes:
-        {{ toYaml .spec.accessModes | indent 0 }}
-        storageClassName: {{ include "cratedb.storageClassName" .spec | trim | quote }}
-        resources:
-          requests:
-            storage: {{ .spec.resources.requests.storage }}
-  {{- end }}
+    {{- toYaml .Values.volumeClaims | nindent 4 }}
   {{- end }}
